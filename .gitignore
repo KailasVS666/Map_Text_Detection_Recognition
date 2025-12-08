@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# IDE/OS
+.vscode/
+.DS_Store
+.ipynb_checkpoints/
+
+# --- IMPORTANT: MODEL WEIGHTS ---
+# Do NOT ignore .pth files here because Git LFS is tracking them.
+# We want Git to see them so LFS can handle them.
+
+# Data and Logs
+data/
+datasets/
+logs/
+runs/
+out/
+temp/
+
+# --- PROJECT SPECIFIC DATA ---
+# Ignore the actual main data folder
+Rumsey_Map_OCR_Data/
+*.zip
+
+# Virtual Environment
+map_ocr_gpu_env/
+ocr_new_env/
+
+# --- PaddleOCR Generated/Downloaded Files (Crucial for Fine-Tuning) ---
+PaddleOCR/train_data/
+PaddleOCR/pretrain_models/
+PaddleOCR/output/
+*.tar
