@@ -3,7 +3,6 @@ Global:
   epoch_num: 50
   log_smooth_window: 20
   print_batch_step: 10
-  # Note: BASE_DIR will be replaced when you run the python init script again (we skip that step this time)
   save_model_dir: C:/Users/sharj/Desktop/Rumsey_Map_OCR/PaddleOCR/output/rec_finetune
   save_epoch_step: 10
   eval_batch_step: [0, 500]
@@ -40,12 +39,22 @@ Architecture:
     name: PPLCNetV3
     scale: 0.95
   Head:
-    name: CTCHead # Simplified from MultiHead
-    Head:
-      fc_decay: 0.00001
+    name: MultiHead
+    head_list:
+      - CTCHead:
+          Neck:
+            name: svtr
+            dims: 120
+            depth: 2
+            hidden_dims: 120
+            use_guide: True
+          Head:
+            fc_decay: 0.00001
 
 Loss:
-  name: CTCLoss # Simplified from MultiLoss
+  name: MultiLoss
+  loss_config_list:
+    - CTCLoss:
 
 PostProcess:
   name: CTCLabelDecode
@@ -66,12 +75,11 @@ Train:
         img_mode: BGR
         channel_first: false
     - RecAug:
-    - LabelEncode: # Simplified from MultiLabelEncode
+    - MultiLabelEncode: # Creates 'label_ctc'
     - RecResizeImg:
         image_shape: [3, 48, 320]
     - KeepKeys:
-        # Only keep image, standard label, and length. No more _ctc or _nrtr suffixes
-        keep_keys: ['image', 'label', 'length', 'valid_ratio'] 
+        keep_keys: ['image', 'label_ctc', 'length'] # We keep ONLY what CTC needs
   loader:
     shuffle: true
     batch_size_per_card: 64
@@ -88,12 +96,11 @@ Eval:
     - DecodeImage:
         img_mode: BGR
         channel_first: false
-    - LabelEncode: # Simplified from MultiLabelEncode
+    - MultiLabelEncode: # Creates 'label_ctc'
     - RecResizeImg:
         image_shape: [3, 48, 320]
     - KeepKeys:
-        # Only keep image, standard label, and length. No more _ctc or _nrtr suffixes
-        keep_keys: ['image', 'label', 'length', 'valid_ratio']
+        keep_keys: ['image', 'label_ctc', 'length']
   loader:
     shuffle: false
     drop_last: false
