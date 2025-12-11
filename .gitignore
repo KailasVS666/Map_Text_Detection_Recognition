@@ -34,3 +34,4 @@ PaddleOCR/train_data/
 PaddleOCR/pretrain_models/
 PaddleOCR/output/
 *.tar
+PaddleOCR_Engine/
