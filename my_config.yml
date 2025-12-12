@@ -52,9 +52,7 @@ Architecture:
             fc_decay: 0.00001
 
 Loss:
-  name: MultiLoss
-  loss_config_list:
-    - CTCLoss:
+  name: CTCLoss # <--- CHANGED: Removed "MultiLoss" wrapper and list
 
 PostProcess:
   name: CTCLabelDecode
@@ -75,11 +73,11 @@ Train:
         img_mode: BGR
         channel_first: false
     - RecAug:
-    - MultiLabelEncode: # Creates 'label_ctc'
+    - MultiLabelEncode: # Needs to be MultiLabelEncode when using MultiHead architecture
     - RecResizeImg:
         image_shape: [3, 48, 320]
     - KeepKeys:
-        keep_keys: ['image', 'label_ctc', 'length'] # We keep ONLY what CTC needs
+        keep_keys: ['image', 'label_ctc', 'length']
   loader:
     shuffle: true
     batch_size_per_card: 64
@@ -96,7 +94,7 @@ Eval:
     - DecodeImage:
         img_mode: BGR
         channel_first: false
-    - MultiLabelEncode: # Creates 'label_ctc'
+    - MultiLabelEncode:
     - RecResizeImg:
         image_shape: [3, 48, 320]
     - KeepKeys:
