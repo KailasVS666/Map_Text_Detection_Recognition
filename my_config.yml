@@ -52,7 +52,9 @@ Architecture:
             fc_decay: 0.00001
 
 Loss:
-  name: CTCLoss # <--- CHANGED: Removed "MultiLoss" wrapper and list
+  name: MultiLoss
+  loss_config_list:
+    - CTCLoss:
 
 PostProcess:
   name: CTCLabelDecode
@@ -73,16 +75,17 @@ Train:
         img_mode: BGR
         channel_first: false
     - RecAug:
-    - MultiLabelEncode: # Needs to be MultiLabelEncode when using MultiHead architecture
+    - MultiLabelEncode:
     - RecResizeImg:
         image_shape: [3, 48, 320]
     - KeepKeys:
-        keep_keys: ['image', 'label_ctc', 'length']
+        # valid_ratio is CRITICAL here so MultiLoss slicing doesn't delete the Length
+        keep_keys: ['image', 'label_ctc', 'valid_ratio', 'length']
   loader:
     shuffle: true
     batch_size_per_card: 64
     drop_last: true
-    num_workers: 4
+    num_workers: 0
 
 Eval:
   dataset:
@@ -98,9 +101,9 @@ Eval:
     - RecResizeImg:
         image_shape: [3, 48, 320]
     - KeepKeys:
-        keep_keys: ['image', 'label_ctc', 'length']
+        keep_keys: ['image', 'label_ctc', 'valid_ratio', 'length']
   loader:
     shuffle: false
     drop_last: false
     batch_size_per_card: 64
-    num_workers: 4
+    num_workers: 0
