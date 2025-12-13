@@ -8,7 +8,10 @@ Global:
   eval_batch_step: [0, 500]
   cal_metric_during_train: true
   pretrained_model: C:/Users/sharj/Desktop/Rumsey_Map_OCR/PaddleOCR/pretrain_models/en_PP-OCRv4_rec_train/student
-  checkpoints: null
+  
+  # 👇 THIS IS THE CHANGE: Points to your latest checkpoint to auto-resume
+  checkpoints: C:/Users/sharj/Desktop/Rumsey_Map_OCR/PaddleOCR/output/rec_finetune/latest
+  
   save_inference_dir: null
   use_visualdl: false
   infer_img: null
@@ -79,7 +82,6 @@ Train:
     - RecResizeImg:
         image_shape: [3, 48, 320]
     - KeepKeys:
-        # valid_ratio is CRITICAL here so MultiLoss slicing doesn't delete the Length
         keep_keys: ['image', 'label_ctc', 'valid_ratio', 'length']
   loader:
     shuffle: true
