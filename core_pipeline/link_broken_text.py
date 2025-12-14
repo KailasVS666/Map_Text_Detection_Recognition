@@ -9,9 +9,9 @@ OUTPUT_CSV = "map_text_results_linked.csv"
 
 # Tuning Parameters
 # How far apart can letters be? (2.5x the letter height is a good standard)
-MAX_HORIZONTAL_GAP_RATIO = 2.5 
+MAX_HORIZONTAL_GAP_RATIO = 1.0
 # How much can they shift up/down? (0.5x the letter height)
-MAX_VERTICAL_SHIFT_RATIO = 0.5  
+MAX_VERTICAL_SHIFT_RATIO = 0.2 
 
 def get_box_height(box):
     """Calculates height of the box."""

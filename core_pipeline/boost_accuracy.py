@@ -7,11 +7,11 @@ OUTPUT_CSV = "map_text_results_elite.csv"
 
 # 🎯 THE ELITE THRESHOLDS
 # 1. Minimum Confidence: Raise from 0.85 to 0.88 (Discard weak guesses)
-MIN_CONFIDENCE = 0.90
+MIN_CONFIDENCE = 0.80
 
 # 2. Minimum Length: Discard single letters (often noise) UNLESS they are very confident
 #    (Keeps 'N', 'S', 'E', 'W' for compass directions if they are clear)
-MIN_LENGTH_CONFIDENCE = 0.95 
+MIN_LENGTH_CONFIDENCE = 0.92
 
 def is_garbage(text):
     """Returns True if text looks like OCR noise (e.g., ';;', '..', or empty)."""
