@@ -4,7 +4,7 @@ import os
 import random
 
 # --- CONFIGURATION ---
-CSV_FILE = "map_text_results.csv"
+CSV_FILE = "map_text_results_linked.csv"
 IMAGE_FOLDER = r"C:\Users\sharj\Desktop\Rumsey_Map_OCR\Rumsey_Map_OCR_Data\rumsey\icdar24-train-png\train_images"
 OUTPUT_FOLDER = "visualized_results"
 
