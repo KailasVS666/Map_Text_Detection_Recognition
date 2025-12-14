@@ -52,3 +52,4 @@ runs/
 out/
 temp/
 debug_batch.py
+*.png
