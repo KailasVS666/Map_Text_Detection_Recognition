@@ -5,10 +5,13 @@ __pycache__/
 .DS_Store
 .ipynb_checkpoints/
 .vscode/
+Thumbs.db
 
 # --- Virtual Environments (NEVER PUSH) ---
 ocr_new_env/
 map_ocr_gpu_env/
+venv/
+env/
 
 # --- Large Datasets & Archives ---
 Rumsey_Map_OCR_Data/
@@ -23,17 +26,29 @@ PaddleOCR/train_data/
 output/
 PaddleOCR_Engine/
 
-# --- Model Weights ---
+# --- Local Tools & Libraries ---
+# Ignore the downloaded tools folder to keep repo clean
+PaddleOCR_Official_Tools/
+
+# --- Model Weights (Specific & General) ---
 # Block heavy weight files generally
 *.pdparams
 *.pdopt
 *.pdmodel
+*.pth
+# Explicitly block the inference folder we used today
+inference/
 
-# Block PyTorch experiments weights
-experiments/*.pth
+# --- Results & Outputs ---
+# Don't push generated images or CSV data
+visualized_results/
+inference_results/
+map_text_results.csv
+*.csv
 
 # --- Temp/Logs ---
 logs/
 runs/
 out/
 temp/
+debug_batch.py
