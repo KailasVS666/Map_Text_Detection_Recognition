@@ -1,42 +1,57 @@
 import os
-import cv2
+import logging
 from paddleocr import PaddleOCR
 
 # --- CONFIGURATION ---
-# Path to your custom trained model
 REC_MODEL_DIR = 'PaddleOCR/output/rec_finetune/best_accuracy'
-# Path to your map image
 IMAGE_PATH = 'image_cadae5.jpg' 
+
+# Suppress debug logs
+logging.getLogger('ppocr').setLevel(logging.ERROR)
 
 print(f"🚀 Initializing OCR with custom model: {REC_MODEL_DIR}")
 
-# Initialize PaddleOCR
-# - use_angle_cls=True: Rotates text if needed (good for maps)
-# - det=True: Uses the default pre-trained detector (Text Snake/DB)
-# - rec=True: Uses YOUR custom trained model
+# --- FIX: Use New API Arguments & Force CPU ---
+# We use 'device="cpu"' to prevent the silent crash. 
+# Once this works, you can try changing it back to 'gpu'.
 ocr = PaddleOCR(
-    use_angle_cls=True,
     lang='en',
-    rec_model_dir=REC_MODEL_DIR,
-    use_gpu=True,
-    show_log=False
+    use_textline_orientation=True,             # Correct new argument
+    text_recognition_model_dir=REC_MODEL_DIR,  # Correct new argument
+    device='cpu'                               # Correct argument (replaces use_gpu)
 )
 
 if not os.path.exists(IMAGE_PATH):
     print(f"❌ Error: Image not found at {IMAGE_PATH}")
 else:
     print(f"🔎 Scanning image: {IMAGE_PATH}...")
-    # Run Inference
-    # cls=True enables angle classification
-    result = ocr.ocr(IMAGE_PATH, cls=True)
+    
+    try:
+        # Run Inference
+        result = ocr.ocr(IMAGE_PATH, cls=True)
 
-    print("-" * 50)
-    # Result structure: [ [box, (text, score)], ... ]
-    if result and result[0]:
-        for idx, line in enumerate(result[0]):
-            box = line[0]
-            text, score = line[1]
-            print(f"📍 Found: '{text}' (Conf: {score:.4f})")
-    else:
-        print("⚠️ No text detected.")
-    print("-" * 50)
+        print("-" * 50)
+        # Handle cases where result is None (no text found at all)
+        if result and result[0]:
+            count = 0
+            for line in result[0]:
+                if line:
+                    text = line[1][0]
+                    score = line[1][1]
+                    
+                    if score > 0.65:
+                        print(f"✅ Found: '{text}' (Conf: {score:.4f})")
+                        count += 1
+                    else:
+                        print(f"⚠️ Found: '{text}' (Conf: {score:.4f})")
+            
+            if count == 0:
+                print("⚠️ No high-confidence text found.")
+        else:
+            print("⚠️ No text detected.")
+        print("-" * 50)
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        print(f"❌ Inference Error: {e}")
