@@ -56,3 +56,5 @@ debug_batch.py
 
 # Ignore training data
 training_hard_examples/
+
+dataset_ready/
