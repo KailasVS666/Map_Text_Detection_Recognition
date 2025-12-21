@@ -12,10 +12,10 @@ from tqdm import tqdm
 # --- CONFIGURATION ---
 TRAIN_DIR = "dataset_ready/train_words"
 VAL_DIR = "dataset_ready/val"
-BATCH_SIZE = 64         # Optimized for RTX 3050 6GB
-EPOCHS = 50             # High epoch count allows Scheduler to work
+BATCH_SIZE = 32         # Reduced for 64px height to save VRAM on RTX 3050
+EPOCHS = 50
 LEARNING_RATE = 0.0001
-IMG_HEIGHT = 32
+IMG_HEIGHT = 64         # DOUBLED: Better detail for complex fonts
 IMG_WIDTH = 256
 ALPHABET = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~ "
 NUM_WORKERS = 4
@@ -70,26 +70,29 @@ class TransferCRNN(nn.Module):
         self.fc = nn.Linear(512, num_chars + 1)
 
     def forward(self, x):
-        features = self.backbone(x)
-        features = features.mean(2) 
-        features = features.permute(0, 2, 1) 
+        features = self.backbone(x) # [B, 256, H/16, W/16] -> [B, 256, 4, 16] for 64px
+        features = features.mean(2) # Pool height: [B, 256, 16]
+        features = features.permute(0, 2, 1) # [B, 16, 256]
         rnn_out, _ = self.rnn(features)
         return self.fc(rnn_out).permute(1, 0, 2)
 
 # --- 4. MAIN ---
 def main():
     device = torch.device("cuda")
-    print(f"🚀 Training with Auto-Slowdown on {torch.cuda.get_device_name(0)}")
+    print(f"🚀 High-Res 'Hachure-Killer' Training on {torch.cuda.get_device_name(0)}")
     os.makedirs("outputs", exist_ok=True)
 
-    # --- AUGMENTATION ---
+    # --- MAP-HARDENED AUGMENTATION (PHASE 8) ---
     train_transform = v2.Compose([
-        v2.RandomRotation(degrees=10),
+        v2.RandomRotation(degrees=8),
         v2.RandomPerspective(distortion_scale=0.2, p=0.5),
+        v2.RandomAdjustSharpness(sharpness_factor=2, p=0.5), # Crucial for blurry map ink
         v2.GaussianBlur(kernel_size=(3, 3), sigma=(0.1, 1.0)),
         v2.Resize((IMG_HEIGHT, IMG_WIDTH)),
         v2.ToImage(),
         v2.ToDtype(torch.float32, scale=True),
+        # New Augmentation: RandomErasing simulates lines cutting through words
+        v2.RandomErasing(p=0.3, scale=(0.02, 0.1), ratio=(0.3, 3.3), value=0), 
         v2.Normalize((0.5,), (0.5,))
     ])
 
@@ -105,17 +108,13 @@ def main():
 
     model = TransferCRNN(len(ALPHABET)).to(device)
     
-    # Load previous best weights to start from where we left off (Optional but recommended)
+    # Load best model to continue refining it
     if os.path.exists("outputs/best_model.pth"):
-        print("🔄 Resuming from previous best model...")
-        model.load_state_dict(torch.load("outputs/best_model.pth", weights_only=True))
-    
+         print("🔄 Resuming from previous best model...")
+         model.load_state_dict(torch.load("outputs/best_model.pth", weights_only=True))
+
     optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
-    
-    # --- SCHEDULER: The "Auto-Slowdown" Feature ---
-    # If val_loss doesn't improve for 3 epochs, cut LR by 50%
-    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=3, verbose=True)
-    
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=3)
     criterion = nn.CTCLoss(blank=0, zero_infinity=True)
     best_loss = float('inf')
 
@@ -136,15 +135,13 @@ def main():
 
         model.eval()
         val_loss = sum(criterion(model(im.to(device)).log_softmax(2), la.to(device), torch.full((im.size(0),), 16, dtype=torch.long).to(device), ll.to(device)).item() for im, la, ll in val_loader) / len(val_loader)
-        
-        # --- UPDATE SCHEDULER ---
         scheduler.step(val_loss)
-
+        
         print(f"✅ Epoch {epoch+1} | Val Loss: {val_loss:.4f}")
         if val_loss < best_loss:
             best_loss = val_loss
             torch.save(model.state_dict(), "outputs/best_model.pth")
-            print(f"   ✨ New Best Saved! Sample: '{decode_prediction(preds)[0]}'")
+            print(f"   ✨ Saved! Sample: '{decode_prediction(preds)[0]}'")
 
 if __name__ == "__main__":
     main()
