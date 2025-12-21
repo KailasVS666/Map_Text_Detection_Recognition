@@ -1,4 +1,4 @@
-# --- Python & System Garbage ---
+﻿# --- Python & System Garbage ---
 __pycache__/
 *.pyc
 *.pyo
@@ -18,31 +18,31 @@ Rumsey_Map_OCR_Data/
 *.zip
 *.tar
 *.rar
+archive/
 
 # --- PaddleOCR Training Artifacts (HEAVY) ---
 PaddleOCR/output/
 PaddleOCR/pretrain_models/
 PaddleOCR/train_data/
 output/
+outputs/
 PaddleOCR_Engine/
 
 # --- Local Tools & Libraries ---
-# Ignore the downloaded tools folder to keep repo clean
 PaddleOCR_Official_Tools/
 
 # --- Model Weights (Specific & General) ---
-# Block heavy weight files generally
 *.pdparams
 *.pdopt
 *.pdmodel
 *.pth
-# Explicitly block the inference folder we used today
 inference/
+experiments/
 
 # --- Results & Outputs ---
-# Don't push generated images or CSV data
 visualized_results/
 inference_results/
+results/
 map_text_results.csv
 *.csv
 
@@ -54,7 +54,6 @@ temp/
 debug_batch.py
 *.png
 
-# Ignore training data
+# --- Training Data ---
 training_hard_examples/
-
 dataset_ready/

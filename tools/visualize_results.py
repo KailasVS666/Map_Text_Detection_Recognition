@@ -1,65 +1,71 @@
-import pandas as pd
-import cv2
 import os
-import random
+import cv2
+import torch
+import json
+import numpy as np
+from PIL import Image
+from torchvision import transforms
+from train import TransferCRNN, ALPHABET, IMG_WIDTH, IMG_HEIGHT, decode_prediction
 
-# --- CONFIGURATION ---
-CSV_FILE = "map_text_results_linked.csv"
-IMAGE_FOLDER = r"C:\Users\sharj\Desktop\Rumsey_Map_OCR\Rumsey_Map_OCR_Data\rumsey\icdar24-train-png\train_images"
-OUTPUT_FOLDER = "visualized_results"
+# --- CONFIG ---
+DEVICE = torch.device("cuda")
+MODEL_PATH = "outputs/best_model.pth"
+# Pick one large tile from your ICDAR folder
+TILE_PATH = r"C:\Users\sharj\Desktop\Rumsey_Map_OCR\Rumsey_Map_OCR_Data\rumsey\icdar24-train-png\train_images\0009008_h2_w3.png"
+# Your original annotations to find the boxes
+JSON_PATH = r"C:\Users\sharj\Desktop\Rumsey_Map_OCR\Rumsey_Map_OCR_Data\rumsey\icdar24-train-png\annotations.json"
 
-# Create output folder
-if not os.path.exists(OUTPUT_FOLDER):
-    os.makedirs(OUTPUT_FOLDER)
+def load_model():
+    model = TransferCRNN(len(ALPHABET)).to(DEVICE)
+    model.load_state_dict(torch.load(MODEL_PATH))
+    model.eval()
+    return model
 
 def main():
-    print("📊 Loading CSV data...")
-    try:
-        df = pd.read_csv(CSV_FILE)
-    except FileNotFoundError:
-        print("❌ CSV file not found! Run batch_process_maps.py first.")
-        return
+    model = load_model()
+    image = cv2.imread(TILE_PATH)
+    display_img = image.copy()
+    
+    # Load JSON to find the boxes for this specific tile
+    with open(JSON_PATH, 'r') as f:
+        data = json.load(f)
+    
+    tile_filename = os.path.basename(TILE_PATH)
+    entry = next(item for item in data if item["image"] == tile_filename)
+    
+    transform = transforms.Compose([
+        transforms.Resize((IMG_HEIGHT, IMG_WIDTH)),
+        transforms.ToTensor(),
+        transforms.Normalize((0.5,), (0.5,))
+    ])
 
-    # Pick 3 random maps to visualize
-    unique_files = df['Filename'].unique().tolist()
-    sample_files = random.sample(unique_files, 3)
+    print(f"🧐 Processing tile: {tile_filename}...")
 
-    print(f"🖌️  Visualizing results for: {sample_files}")
+    for group in entry['groups']:
+        for word_item in group:
+            verts = np.array(word_item['vertices'])
+            x_min, y_min = np.min(verts, axis=0).astype(int)
+            x_max, y_max = np.max(verts, axis=0).astype(int)
+            
+            # Crop & Predict
+            crop = image[y_min:y_max, x_min:x_max]
+            if crop.size == 0: continue
+            
+            pil_crop = Image.fromarray(cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY))
+            input_tensor = transform(pil_crop).unsqueeze(0).to(DEVICE)
+            
+            with torch.no_grad():
+                preds = model(input_tensor)
+                text = decode_prediction(preds)[0]
 
-    for filename in sample_files:
-        img_path = os.path.join(IMAGE_FOLDER, filename)
-        
-        if not os.path.exists(img_path):
-            print(f"⚠️  Image not found: {filename}")
-            continue
+            # Draw on Map
+            cv2.rectangle(display_img, (x_min, y_min), (x_max, y_max), (0, 255, 0), 2)
+            cv2.putText(display_img, text, (x_min, y_min - 5), 
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
 
-        # Load Image
-        img = cv2.imread(img_path)
-        
-        # Get all text for this image
-        map_data = df[df['Filename'] == filename]
-
-        for index, row in map_data.iterrows():
-            text = row['Detected Text']
-            score = float(row['Confidence'])
-            box = eval(row['Box Coordinates']) # Convert string back to list
-
-            # Draw Box (Green)
-            points = [(int(pt[0]), int(pt[1])) for pt in box]
-            for i in range(4):
-                cv2.line(img, points[i], points[(i+1)%4], (0, 255, 0), 2)
-
-            # Draw Text (Red)
-            # Put text slightly above the box
-            cv2.putText(img, f"{text} ({score:.2f})", (points[0][0], points[0][1] - 5), 
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
-
-        # Save Result
-        save_path = os.path.join(OUTPUT_FOLDER, f"viz_{filename}")
-        cv2.imwrite(save_path, img)
-        print(f"✅ Saved visualization: {save_path}")
-
-    print(f"\n✨ Done! Check the '{OUTPUT_FOLDER}' folder to see your AI in action.")
+    output_path = "outputs/visual_result.jpg"
+    cv2.imwrite(output_path, display_img)
+    print(f"✅ Visualization saved to: {output_path}")
 
 if __name__ == "__main__":
     main()
