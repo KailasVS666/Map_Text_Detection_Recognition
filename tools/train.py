@@ -4,7 +4,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
 from torchvision import models
-from torchvision.transforms import v2  # Using modern v2 transforms for speed
+from torchvision.transforms import v2 
 from PIL import Image
 import pandas as pd
 from tqdm import tqdm
@@ -13,7 +13,7 @@ from tqdm import tqdm
 TRAIN_DIR = "dataset_ready/train_words"
 VAL_DIR = "dataset_ready/val"
 BATCH_SIZE = 64         # Optimized for RTX 3050 6GB
-EPOCHS = 50             # Increased to allow the model to learn from augmented data
+EPOCHS = 50             # High epoch count allows Scheduler to work
 LEARNING_RATE = 0.0001
 IMG_HEIGHT = 32
 IMG_WIDTH = 256
@@ -79,14 +79,14 @@ class TransferCRNN(nn.Module):
 # --- 4. MAIN ---
 def main():
     device = torch.device("cuda")
-    print(f"🚀 Training with Augmentation on {torch.cuda.get_device_name(0)}")
+    print(f"🚀 Training with Auto-Slowdown on {torch.cuda.get_device_name(0)}")
     os.makedirs("outputs", exist_ok=True)
 
-    # --- MAP-SPECIFIC AUGMENTATIONS ---
+    # --- AUGMENTATION ---
     train_transform = v2.Compose([
-        v2.RandomRotation(degrees=10),               # Handles slanted map names
-        v2.RandomPerspective(distortion_scale=0.2, p=0.5), # Handles curved paper
-        v2.GaussianBlur(kernel_size=(3, 3), sigma=(0.1, 1.0)), # Handles blurry ink
+        v2.RandomRotation(degrees=10),
+        v2.RandomPerspective(distortion_scale=0.2, p=0.5),
+        v2.GaussianBlur(kernel_size=(3, 3), sigma=(0.1, 1.0)),
         v2.Resize((IMG_HEIGHT, IMG_WIDTH)),
         v2.ToImage(),
         v2.ToDtype(torch.float32, scale=True),
@@ -104,7 +104,18 @@ def main():
     val_loader = DataLoader(OCRDataset(VAL_DIR, val_transform), batch_size=BATCH_SIZE, shuffle=False, collate_fn=collate_fn)
 
     model = TransferCRNN(len(ALPHABET)).to(device)
+    
+    # Load previous best weights to start from where we left off (Optional but recommended)
+    if os.path.exists("outputs/best_model.pth"):
+        print("🔄 Resuming from previous best model...")
+        model.load_state_dict(torch.load("outputs/best_model.pth", weights_only=True))
+    
     optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
+    
+    # --- SCHEDULER: The "Auto-Slowdown" Feature ---
+    # If val_loss doesn't improve for 3 epochs, cut LR by 50%
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=3, verbose=True)
+    
     criterion = nn.CTCLoss(blank=0, zero_infinity=True)
     best_loss = float('inf')
 
@@ -126,6 +137,9 @@ def main():
         model.eval()
         val_loss = sum(criterion(model(im.to(device)).log_softmax(2), la.to(device), torch.full((im.size(0),), 16, dtype=torch.long).to(device), ll.to(device)).item() for im, la, ll in val_loader) / len(val_loader)
         
+        # --- UPDATE SCHEDULER ---
+        scheduler.step(val_loss)
+
         print(f"✅ Epoch {epoch+1} | Val Loss: {val_loss:.4f}")
         if val_loss < best_loss:
             best_loss = val_loss
