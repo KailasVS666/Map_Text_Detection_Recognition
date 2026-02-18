@@ -12,6 +12,7 @@ ocr_new_env/
 map_ocr_gpu_env/
 venv/
 env/
+*_env/
 
 # --- Large Datasets & Archives ---
 Rumsey_Map_OCR_Data/
@@ -20,30 +21,30 @@ Rumsey_Map_OCR_Data/
 *.rar
 archive/
 
-# --- PaddleOCR Training Artifacts (HEAVY) ---
-PaddleOCR/output/
-PaddleOCR/pretrain_models/
-PaddleOCR/train_data/
-output/
-outputs/
+# --- PaddleOCR Source Clones (too large for repo) ---
+PaddleOCR/
 PaddleOCR_Engine/
-
-# --- Local Tools & Libraries ---
 PaddleOCR_Official_Tools/
 
-# --- Model Weights (Specific & General) ---
+# --- Model Weights & Pretrained Downloads ---
 *.pdparams
 *.pdopt
 *.pdmodel
 *.pth
 inference/
-experiments/
+pretrained/
+
+# --- Training Outputs ---
+output/
+outputs/
+train_data/
+training_hard_examples/
+dataset_ready/
 
 # --- Results & Outputs ---
 visualized_results/
 inference_results/
 results/
-map_text_results.csv
 *.csv
 
 # --- Temp/Logs ---
@@ -51,9 +52,6 @@ logs/
 runs/
 out/
 temp/
-debug_batch.py
+_test_*.py
+debug_*.py
 *.png
-
-# --- Training Data ---
-training_hard_examples/
-dataset_ready/
