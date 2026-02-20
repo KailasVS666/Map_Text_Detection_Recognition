@@ -24,11 +24,11 @@ sys.path.insert(0, os.path.abspath("PaddleOCR_Official_Tools"))
 
 # ─── CONFIGURATION ────────────────────────────────────────────────────────────
 # Fine-tuned models (from step 2 & 3)
-REC_MODEL_DIR = "./output/rec_finetune/best_accuracy"
+REC_MODEL_DIR = "./output/rec_inference_finetuned"
 DET_MODEL_DIR = "./output/det_finetune/best_accuracy"
 
 # Fallback to original models if fine-tuned not available
-REC_MODEL_FALLBACK = "./output/rec_inference"
+REC_MODEL_FALLBACK = "./inference/en_PP-OCRv3_rec_infer"
 DET_MODEL_FALLBACK = "./inference/ch_PP-OCRv4_det_infer"
 
 CHAR_DICT_PATH = "./PaddleOCR_Official_Tools/ppocr/utils/en_dict.txt"
