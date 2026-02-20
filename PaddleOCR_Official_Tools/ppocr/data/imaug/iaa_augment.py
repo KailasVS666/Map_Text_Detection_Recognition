@@ -16,9 +16,22 @@ This code is refer from:
 https://github.com/WenmuZhou/DBNet.pytorch/blob/master/data_loader/modules/iaa_augment.py
 """
 import os
+import sys
+import types
 
 # Prevent automatic updates in Albumentations for stability in augmentation behavior
 os.environ["NO_ALBUMENTATIONS_UPDATE"] = "1"
+
+# Block albumentations from importing torch (which causes shm.dll crash on Windows
+# when a CPU-only or mismatched torch version is installed). We only need the
+# image augmentation parts of albumentations, not the PyTorch transforms.
+if "torch" not in sys.modules:
+    _dummy_torch = types.ModuleType("torch")
+    _dummy_torch.__version__ = "0.0.0"
+    _dummy_torch.Tensor = object
+    sys.modules["torch"] = _dummy_torch
+    sys.modules["torch.nn"] = types.ModuleType("torch.nn")
+    sys.modules["torch.nn.functional"] = types.ModuleType("torch.nn.functional")
 
 import numpy as np
 import albumentations as A
