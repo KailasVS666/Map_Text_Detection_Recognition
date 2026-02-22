@@ -44,7 +44,7 @@ Architecture:
   Backbone:
     name: PPLCNetV3
     scale: 0.75
-    det_model: true
+    det: True
   Neck:
     name: RSEFPN
     out_channels: 96
