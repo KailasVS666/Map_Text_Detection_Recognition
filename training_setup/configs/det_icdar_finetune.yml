@@ -17,7 +17,7 @@ Global:
   - 0
   - 400
   cal_metric_during_train: false
-  pretrained_model: ../pretrained/en_PP-OCRv4_det_train/best_accuracy
+  pretrained_model: ../pretrained/ch_PP-OCRv4_det_train/best_accuracy
   checkpoints: null
   save_inference_dir: null
   use_visualdl: false
