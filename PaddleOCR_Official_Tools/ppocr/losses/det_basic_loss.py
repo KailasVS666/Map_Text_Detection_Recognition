@@ -86,8 +86,8 @@ class BalanceLoss(nn.Layer):
             mask (variable): masked maps.
         return: (variable) balanced loss
         """
-        positive = gt * mask
-        negative = (1 - gt) * mask
+        positive = (gt * mask).nan_to_num(nan=0.0)
+        negative = ((1 - gt) * mask).nan_to_num(nan=0.0)
 
         positive_count = int(positive.sum())
         negative_count = int(min(negative.sum(), positive_count * self.negative_ratio))
