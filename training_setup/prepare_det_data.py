@@ -88,10 +88,10 @@ def convert_annotations(annot_path, imgs_dir, output_label_file, imgs_output_dir
                 illegible = word.get("illegible", False)
                 text      = word.get("text", "").strip()
 
-                # Get polygon from 'polygon' field or fall back to bbox
-                if "polygon" in word and word["polygon"]:
-                    raw_pts = word["polygon"]
-                    pts = [[int(p[0]), int(p[1])] for p in raw_pts]
+                # ICDAR 2024 uses 'vertices' for the polygon points
+                if "vertices" in word and word["vertices"]:
+                    raw_pts = word["vertices"]
+                    pts = [[float(p[0]), float(p[1])] for p in raw_pts]
                 elif "bbox" in word:
                     x, y, w, h = word["bbox"]
                     pts = [[x, y], [x+w, y], [x+w, y+h], [x, y+h]]
