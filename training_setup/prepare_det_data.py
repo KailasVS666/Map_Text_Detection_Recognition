@@ -47,12 +47,12 @@ def polygon_to_quad(points):
 
 
 def box_size(quad):
-    """Return approximate size of a quad (diagonal length)."""
+    """Return (width, height) of a quad's bounding box."""
     xs = [p[0] for p in quad]
     ys = [p[1] for p in quad]
     w = max(xs) - min(xs)
     h = max(ys) - min(ys)
-    return math.sqrt(w * w + h * h)
+    return w, h
 
 
 def convert_annotations(annot_path, imgs_dir, output_label_file, imgs_output_dir):
@@ -101,8 +101,9 @@ def convert_annotations(annot_path, imgs_dir, output_label_file, imgs_output_dir
 
                 quad = polygon_to_quad(pts)
 
-                # Skip tiny boxes
-                if box_size(quad) < MIN_TEXT_SIZE:
+                # Skip degenerate boxes (zero/tiny width OR height)
+                w, h = box_size(quad)
+                if w < MIN_TEXT_SIZE or h < MIN_TEXT_SIZE:
                     skipped_boxes += 1
                     continue
 
