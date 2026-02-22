@@ -31,7 +31,7 @@ Optimizer:
   beta2: 0.999
   lr:
     name: Cosine
-    learning_rate: 0.0005        # Low LR for fine-tuning
+    learning_rate: 0.0001        # Reduced LR for stable fine-tuning
     warmup_epoch: 2
   regularizer:
     name: L2
@@ -56,7 +56,7 @@ Architecture:
 Loss:
   name: DBLoss
   balance_loss: true
-  main_loss_type: DiceLoss
+  main_loss_type: BCELoss    # More stable than DiceLoss for fine-tuning
   alpha: 5
   beta: 10
   ohem_ratio: 3
