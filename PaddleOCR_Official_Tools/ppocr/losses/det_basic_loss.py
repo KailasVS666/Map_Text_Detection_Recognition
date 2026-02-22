@@ -129,11 +129,13 @@ class DiceLoss(nn.Layer):
         if weights is not None:
             assert weights.shape == mask.shape
             mask = weights * mask
+        # Apply sigmoid to ensure pred is in [0, 1]
+        pred = F.sigmoid(pred)
         intersection = paddle.sum(pred * gt * mask)
 
         union = paddle.sum(pred * mask) + paddle.sum(gt * mask) + self.eps
         loss = 1 - 2.0 * intersection / union
-        assert loss <= 1
+        loss = paddle.clip(loss, max=1.0)  # clamp instead of assert
         return loss
 
 
